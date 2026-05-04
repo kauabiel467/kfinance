@@ -1371,20 +1371,25 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
 // ── INIT ──────────────────────────────────────
 document.getElementById('i-data').value=new Date().toISOString().split('T')[0];
 
+// Timeout de segurança — se Supabase não responder em 6s, mostra login
+const authTimeout=setTimeout(()=>{showAuth();},6000);
+
 sb.auth.onAuthStateChange(async(event,session)=>{
+  clearTimeout(authTimeout);
   if(session?.user){
     currentUser=session.user;
     document.getElementById('loading').style.display='flex';
-    await loadData();
-    // Mostra modal de criação de personagem se não existir
-    if(!DB.personagem&&view==='geral'){
-      // só mostra se for a primeira vez
-    }
+    try{await loadData();}catch(e){console.error(e);}
     showApp();
   }else{
     showAuth();
   }
 });
+
+// Verifica sessão imediatamente sem esperar o evento
+sb.auth.getSession().then(({data:{session}})=>{
+  if(!session){clearTimeout(authTimeout);showAuth();}
+}).catch(()=>{clearTimeout(authTimeout);showAuth();});
 </script>
 
 </body>
